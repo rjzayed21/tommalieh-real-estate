@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-charcoal-700 antialiased;
+}
+
+@layer utilities {
+  .container-content {
+    @apply mx-auto max-w-content px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-charcoal-900 transition-colors hover:bg-gold-400;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border border-white/30 bg-transparent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white/10;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-md border border-charcoal-700 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-charcoal-700 transition-colors hover:bg-charcoal-700 hover:text-white;
+  }
+
+  .section {
+    @apply py-16 sm:py-20;
+  }
+
+  .prose-article h2 {
+    @apply mt-10 mb-4 text-2xl font-bold text-charcoal-800 sm:text-3xl;
+  }
+
+  .prose-article h3 {
+    @apply mt-8 mb-3 text-xl font-bold text-charcoal-800;
+  }
+
+  .prose-article p {
+    @apply mb-5 leading-relaxed text-charcoal-600;
+  }
+
+  .prose-article ul {
+    @apply mb-5 list-disc space-y-2 pl-6 text-charcoal-600;
+  }
+
+  .prose-article ol {
+    @apply mb-5 list-decimal space-y-2 pl-6 text-charcoal-600;
+  }
+
+  .prose-article a {
+    @apply text-gold-600 underline underline-offset-2 hover:text-gold-700;
+  }
+
+  .prose-article strong {
+    @apply font-semibold text-charcoal-800;
+  }
+}
+
+/* pagefind / scroll offset for anchored headings under sticky header */
+.prose-article h2[id],
+.prose-article h3[id] {
+  scroll-margin-top: 6.5rem;
+}
