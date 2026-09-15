@@ -13,6 +13,10 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 const matter = require("gray-matter");
 const Anthropic = require("@anthropic-ai/sdk");
+const { fetchImages } = require("./lib/fetch-images");
+const { loadEnvLocal } = require("./lib/load-env");
+
+loadEnvLocal();
 
 const ROOT = path.join(__dirname, "..");
 const QUEUE_PATH = path.join(ROOT, "content", "article-queue.json");
@@ -20,7 +24,19 @@ const BLOG_DIR = path.join(ROOT, "content", "blog");
 
 const MODEL = "claude-sonnet-4-6";
 const MAX_ATTEMPTS = 2; // first try + one retry
+const IMAGE_COUNT = 3;
 const PHONE = "(708) 232-0017";
+
+const CATEGORY_IMAGE_HINTS = {
+  "Buying & Selling": "home buying real estate signing",
+  "Contracts & Agreements": "contract signing documents real estate",
+  "Landlord-Tenant": "rental apartment lease keys",
+  Foreclosure: "house for sale foreclosure sign",
+  "Property Disputes": "property boundary fence house",
+  "Zoning & Land Use": "city planning zoning map",
+  "Investment & Commercial": "commercial building office real estate",
+  "General & First-Time Buyers": "family new home keys",
+};
 
 const PRACTICE_AREAS = {
   "residential-real-estate-lawyer": "Residential Real Estate Lawyer",
@@ -143,6 +159,56 @@ async function callClaudeWithRetry(client, prompt) {
   throw lastError;
 }
 
+function buildImageQuery(item) {
+  const base = item.targetKeyword
+    .replace(/\bin illinois\b/gi, "")
+    .replace(/\billinois\b/gi, "")
+    .trim();
+  const hint = CATEGORY_IMAGE_HINTS[item.category] || "real estate house";
+  return `${base} ${hint}`.trim();
+}
+
+function imageMarkdown(image) {
+  const credit = `*Photo by [${image.photographer}](${image.photographerUrl}) via Pexels*`;
+  return `![${image.alt}](${image.path})\n\n${credit}`;
+}
+
+// Inserts images after the 1st H2 section, after the 3rd H2 section, and
+// before the final H2 section (the conclusion/CTA block).
+function insertImagesIntoBody(content, images) {
+  if (!images || images.length === 0) return content;
+
+  const lines = content.split("\n");
+  const h2Indices = [];
+  lines.forEach((line, idx) => {
+    if (/^##\s+/.test(line)) h2Indices.push(idx);
+  });
+
+  if (h2Indices.length === 0) {
+    return (
+      content.trimEnd() + "\n\n" + images.map(imageMarkdown).join("\n\n") + "\n"
+    );
+  }
+
+  const numBlocks = h2Indices.length;
+  const blockEnd = (i) => (i + 1 < numBlocks ? h2Indices[i + 1] : lines.length);
+
+  const points = new Set();
+  points.add(blockEnd(0)); // after the 1st H2 section
+  if (numBlocks >= 3) points.add(blockEnd(2)); // after the 3rd H2 section
+  points.add(h2Indices[numBlocks - 1]); // before the final H2 section
+
+  const sortedAscending = Array.from(points).sort((a, b) => a - b);
+  const imagesToPlace = images.slice(0, sortedAscending.length);
+
+  for (let i = imagesToPlace.length - 1; i >= 0; i--) {
+    const insertionLines = imageMarkdown(imagesToPlace[i]).split("\n");
+    lines.splice(sortedAscending[i], 0, "", ...insertionLines, "");
+  }
+
+  return lines.join("\n");
+}
+
 function validateMdx(mdxText) {
   const { data, content } = matter(mdxText);
   if (!data.title || !data.description || !data.date || !data.category) {
@@ -180,14 +246,36 @@ async function main() {
   const client = new Anthropic({ apiKey });
 
   let mdxText;
+  let frontmatter;
+  let body;
   try {
     const raw = await callClaudeWithRetry(client, prompt);
     mdxText = stripCodeFences(raw);
-    validateMdx(mdxText);
+    const parsed = validateMdx(mdxText);
+    frontmatter = parsed.data;
+    body = parsed.content;
   } catch (err) {
     console.error(`Failed to generate "${item.slug}" after ${MAX_ATTEMPTS} attempts: ${err.message}`);
     console.error("No files were written or committed. Exiting without changes.");
     process.exit(1);
+  }
+
+  if (process.env.PEXELS_API_KEY) {
+    try {
+      const query = buildImageQuery(item);
+      console.log(`Fetching ${IMAGE_COUNT} Pexels images for query: "${query}"`);
+      const images = await fetchImages(query, IMAGE_COUNT, {
+        slug: item.slug,
+        baseDir: "blog",
+      });
+      body = insertImagesIntoBody(body, images);
+      mdxText = matter.stringify(body, frontmatter);
+      console.log(`Inserted ${images.length} image(s) into the article body.`);
+    } catch (err) {
+      console.error(`Image fetch failed, publishing the article without images: ${err.message}`);
+    }
+  } else {
+    console.log("PEXELS_API_KEY not set — publishing the article without images.");
   }
 
   const outPath = path.join(BLOG_DIR, `${item.slug}.mdx`);
@@ -223,7 +311,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("Unexpected error:", err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("Unexpected error:", err);
+    process.exit(1);
+  });
+}
+
+module.exports = { buildImageQuery, insertImagesIntoBody, imageMarkdown };
