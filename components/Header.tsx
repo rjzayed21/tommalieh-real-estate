@@ -16,12 +16,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-charcoal-800 bg-charcoal-900/95 backdrop-blur">
       <div className="container-content grid h-24 grid-cols-[auto_1fr_auto] items-center gap-6">
-        <Link href="/" className="flex items-center rounded-md bg-white px-3 py-1.5 sm:px-4 sm:py-2">
+        <Link href="/" className="flex items-center px-3 py-1.5 sm:px-4 sm:py-2">
           <Image
-            src="/images/tommalieh-logo-1.png"
+            src="/images/tommalieh-logo-real-estate.png"
             alt={FIRM.name}
-            width={600}
-            height={144}
+            width={2170}
+            height={725}
             priority
             className="h-9 w-auto object-contain sm:h-11"
           />

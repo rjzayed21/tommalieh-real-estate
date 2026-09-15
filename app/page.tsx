@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, PlayCircle, ArrowRight } from "lucide-react";
+import { CheckCircle2, ArrowRight } from "lucide-react";
 import Hero from "@/components/Hero";
 import PracticeAreaCard from "@/components/PracticeAreaCard";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
@@ -91,8 +91,8 @@ export default function HomePage() {
       </section>
 
       <section className="section bg-charcoal-50">
-        <div className="container-content grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-          <div>
+        <div className="container-content flex flex-col items-center text-center">
+          <div className="max-w-2xl">
             <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-gold-600">
               About Tommalieh Law
             </p>
@@ -111,7 +111,7 @@ export default function HomePage() {
               negotiates on your behalf, and stays available throughout your
               transaction or dispute so you always know where things stand.
             </p>
-            <ul className="mb-8 space-y-3">
+            <ul className="mb-8 inline-flex flex-col items-start space-y-3 text-left">
               {WHY_CHOOSE_US.map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-charcoal-600">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold-500" />
@@ -119,19 +119,11 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            <Link href="/our-firm" className="btn-outline">
-              Learn More About Our Firm
-            </Link>
-          </div>
-
-          <div className="flex aspect-video items-center justify-center rounded-lg bg-charcoal-900">
-            <button
-              type="button"
-              aria-label="Play firm introduction video"
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-gold-500 text-charcoal-900 transition-transform hover:scale-105"
-            >
-              <PlayCircle className="h-9 w-9" />
-            </button>
+            <div>
+              <Link href="/our-firm" className="btn-outline">
+                Learn More About Our Firm
+              </Link>
+            </div>
           </div>
         </div>
       </section>
